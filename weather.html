@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App 🌸</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="sparkle" cx="50%" cy="50%" r="50%"><stop offset="0%" style="stop-color:white;stop-opacity:0.8"/><stop offset="100%" style="stop-color:white;stop-opacity:0"/></radialGradient></defs><circle cx="20" cy="20" r="1" fill="url(%23sparkle)"><animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/></circle><circle cx="80" cy="30" r="0.5" fill="url(%23sparkle)"><animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/></circle><circle cx="60" cy="70" r="1.5" fill="url(%23sparkle)"><animate attributeName="opacity" values="0;1;0" dur="2.5s" repeatCount="indefinite"/></circle><circle cx="30" cy="80" r="0.8" fill="url(%23sparkle)"><animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite"/></circle></svg>') repeat;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .weather-container {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 187, 208, 0.9));
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(118, 75, 162, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 2;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .weather-container:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 35px 70px rgba(118, 75, 162, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 3px solid rgba(118, 75, 162, 0.3);
+            border-radius: 25px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(248, 187, 208, 0.1));
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            box-shadow: 0 8px 15px rgba(118, 75, 162, 0.3);
+        }
+
+        .weather-display {
+            display: none;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .weather-display.show {
+            display: block;
+        }
+
+        .detail-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(248, 187, 208, 0.3));
+            border-radius: 20px;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="weather-container">
+        <h1 class="app-title"><span>🌸</span>Weather<span>🌸</span></h1>
+
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Enter city name (e.g., London, Tokyo)"
+                id="locationInput">
+            <button class="search-btn" onclick="getWeather()">Search</button>
+        </div>
+
+        <div class="weather-display" id="weatherDisplay">
+            <div class="location-name"><span>📍</span><span id="cityName">City</span></div>
+            <div class="weather-icon" id="weatherIcon">☀️</div>
+            <div class="temperature" id="temperature">--°C</div>
+            <div class="weather-description" id="weatherDescription">---</div>
+            <div class="weather-details">
+                <div class="detail-card">
+                    <div class="detail-icon">💨</div>
+                    <div class="detail-label">Wind Speed</div>
+                    <div class="detail-value" id="windSpeed">-- km/h</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-icon">💧</div>
+                    <div class="detail-label">Humidity</div>
+                    <div class="detail-value" id="humidity">--%</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-icon">👁️</div>
+                    <div class="detail-label">Visibility</div>
+                    <div class="detail-value" id="visibility">-- km</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-icon">🌡️</div>
+                    <div class="detail-label">Feels Like</div>
+                    <div class="detail-value" id="feelsLike">--°C</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-icon">🌬️</div>
+                    <div class="detail-label">Air Quality</div>
+                    <div class="detail-value" id="airQuality">N/A</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getWeatherIcon(condition) {
+            const text = condition.toLowerCase();
+            if (text.includes("sun")) return "☀️";
+            if (text.includes("cloud")) return "☁️";
+            if (text.includes("rain")) return "🌧️";
+            if (text.includes("thunder")) return "⛈️";
+            if (text.includes("snow")) return "❄️";
+            if (text.includes("fog") || text.includes("mist")) return "🌫️";
+            if (text.includes("wind")) return "💨";
+            return "🌤️";
+        }
+
+        async function getWeather() {
+            const city = document.getElementById('locationInput').value.trim();
+            if (!city) { alert("Please enter a city name! 🏙️"); return; }
+
+            showLoading();
+            try {
+                // Always point to local backend
+                const response = await fetch(`/weather?city=${encodeURIComponent(city)}`);
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                const weatherData = {
+                    city: data.city,
+                    temperature: data.temperature.replace("°C", ""),
+                    description: data.condition,
+                    icon: getWeatherIcon(data.condition),
+                    windSpeed: data.windspeed,
+                    humidity: data.humidity,
+                    visibility: data.visibility,
+                    feelsLike: data.feelslike,
+                    airQuality: data.airquality
+                };
+                displayWeather(weatherData);
+            } catch (error) {
+                alert("⚠️ Could not fetch weather data. Please check your backend connection or city name.");
+                hideLoading();
+            }
+        }
+
+        function showLoading() {
+            const btn = document.querySelector('.search-btn');
+            btn.innerHTML = '🔄'; btn.disabled = true;
+        }
+        function hideLoading() {
+            const btn = document.querySelector('.search-btn');
+            btn.innerHTML = 'Search'; btn.disabled = false;
+        }
+
+        function displayWeather(data) {
+            hideLoading();
+            document.getElementById('cityName').textContent = data.city;
+            document.getElementById('temperature').textContent = `${data.temperature}`;
+            document.getElementById('weatherDescription').textContent = data.description;
+            document.getElementById('weatherIcon').textContent = data.icon;
+            document.getElementById('windSpeed').textContent = data.windSpeed;
+            document.getElementById('humidity').textContent = data.humidity;
+            document.getElementById('visibility').textContent = data.visibility;
+            document.getElementById('feelsLike').textContent = data.feelsLike;
+            document.getElementById('airQuality').textContent = data.airQuality;
+            document.getElementById('weatherDisplay').classList.add('show');
+        }
+
+        document.getElementById('locationInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') getWeather();
+        });
+    </script>
+
+</body>
+
+</html>

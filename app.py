@@ -16,34 +16,26 @@ app = Flask(__name__, static_folder='static')
 CORS(app)  # Allow frontend to call backend locally
 
 # 🧩 Function to fetch and parse weather data from wttr.in
-import re
+import requests
 
 def scrape_weather(city):
-    url = f"https://wttr.in/{city}?format=%C+%t+%w+%h+%v+%f"
+    url = f"https://wttr.in/{city}?format=j1"
     try:
         response = requests.get(url, timeout=8)
         response.raise_for_status()
-        text = response.text.strip()
+        data = response.json()
 
-        if "Unknown location" in text or "Sorry" in text:
-            return {"error": f"City '{city}' not found."}
-
-        # Use regex to extract values
-        temp_match = re.search(r'([+-]?\d+°C)', text)
-        condition_match = re.match(r'^[^\s]+', text)
-        wind_match = re.search(r'(\d+ km/h)', text)
-        humidity_match = re.search(r'(\d+%)', text)
-        visibility_match = re.search(r'(\d+ km)', text)
-        feels_match = re.search(r'Feels like ([+-]?\d+°C)', text)
+        # Current condition
+        current = data['current_condition'][0]
 
         return {
             "city": city.title(),
-            "condition": condition_match.group(0) if condition_match else "N/A",
-            "temperature": temp_match.group(1) if temp_match else "N/A",
-            "windspeed": wind_match.group(1) if wind_match else "N/A",
-            "humidity": humidity_match.group(1) if humidity_match else "N/A",
-            "visibility": visibility_match.group(1) if visibility_match else "N/A",
-            "feelslike": feels_match.group(1) if feels_match else "N/A",
+            "condition": current.get('weatherDesc', [{}])[0].get('value', 'N/A'),
+            "temperature": current.get('temp_C', 'N/A') + "°C",
+            "windspeed": current.get('windspeedKmph', 'N/A') + " km/h",
+            "humidity": current.get('humidity', 'N/A') + "%",
+            "visibility": current.get('visibility', 'N/A') + " km",
+            "feelslike": current.get('FeelsLikeC', 'N/A') + "°C",
             "airquality": "N/A"
         }
 
@@ -79,4 +71,5 @@ def home():
 if __name__ == '__main__':
     # Run on all local interfaces so it’s visible at 127.0.0.1 and localhost
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 

@@ -16,44 +16,40 @@ app = Flask(__name__, static_folder='static')
 CORS(app)  # Allow frontend to call backend locally
 
 # 🧩 Function to fetch and parse weather data from wttr.in
+import re
+
 def scrape_weather(city):
-    import re
- 
     url = f"https://wttr.in/{city}?format=%C+%t+%w+%h+%v+%f"
     try:
         response = requests.get(url, timeout=8)
         response.raise_for_status()
         text = response.text.strip()
 
-        if not text or "Unknown" in text or "Sorry" in text:
-            return {"error": f"City '{city}' not found or unavailable."}
+        if "Unknown location" in text or "Sorry" in text:
+            return {"error": f"City '{city}' not found."}
 
-        # Extract data with flexible regex patterns
-        condition = re.search(r'^[A-Za-z ]+', text)
-        temperature = re.search(r'([+-]?\d+°C)', text)
-        windspeed = re.search(r'([←→↑↓]?\s*\d+\s?km/h)', text)
-        humidity = re.search(r'(\d+%)', text)
-        visibility = re.search(r'(\d+\s?km)(?!/)', text)
-        feelslike = re.findall(r'([+-]?\d+°C)', text)
-
-        # Fallbacks
-        feelslike_val = feelslike[-1] if len(feelslike) > 1 else feelslike[0] if feelslike else "N/A"
+        # Use regex to extract values
+        temp_match = re.search(r'([+-]?\d+°C)', text)
+        condition_match = re.match(r'^[^\s]+', text)
+        wind_match = re.search(r'(\d+ km/h)', text)
+        humidity_match = re.search(r'(\d+%)', text)
+        visibility_match = re.search(r'(\d+ km)', text)
+        feels_match = re.search(r'Feels like ([+-]?\d+°C)', text)
 
         return {
             "city": city.title(),
-            "condition": condition.group(0).strip() if condition else "N/A",
-            "temperature": temperature.group(1) if temperature else "N/A",
-            "windspeed": windspeed.group(1).replace(" ", "") if windspeed else "N/A",
-            "humidity": humidity.group(1) if humidity else "N/A",
-            "visibility": visibility.group(1) if visibility else "N/A",
-            "feelslike": feelslike_val,
+            "condition": condition_match.group(0) if condition_match else "N/A",
+            "temperature": temp_match.group(1) if temp_match else "N/A",
+            "windspeed": wind_match.group(1) if wind_match else "N/A",
+            "humidity": humidity_match.group(1) if humidity_match else "N/A",
+            "visibility": visibility_match.group(1) if visibility_match else "N/A",
+            "feelslike": feels_match.group(1) if feels_match else "N/A",
             "airquality": "N/A"
         }
 
-    except requests.exceptions.RequestException as e:
-        return {"error": f"Network error: {str(e)}"}
     except Exception as e:
-        return {"error": f"Parsing error: {str(e)}"}
+        return {"error": str(e)}
+
 
 
 
@@ -83,3 +79,4 @@ def home():
 if __name__ == '__main__':
     # Run on all local interfaces so it’s visible at 127.0.0.1 and localhost
     app.run(host='0.0.0.0', port=5000, debug=True)
+
